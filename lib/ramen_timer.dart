@@ -5,7 +5,7 @@ class RamenTimerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Ramen Timer',
+      title: 'Timer',
       theme: ThemeData(
         primarySwatch: Colors.blue
       ),
@@ -15,7 +15,7 @@ class RamenTimerApp extends StatelessWidget {
 }
 
 class RamenTimerPage extends StatefulWidget {
-  final title = 'Ramen Timer';
+  final title = 'Timer';
   @override
   State<StatefulWidget> createState() {
     return _RamenTimerPageStage();
@@ -23,41 +23,64 @@ class RamenTimerPage extends StatefulWidget {
 }
 
 class _RamenTimerPageStage extends State<RamenTimerPage> {
-  Timer timer;
-  var timerStr = '03:00';
-  int timerSec = 0;
-  var running = false;
-  final minController = TextEditingController(text: '00');
-  final secController = TextEditingController(text: '00');
+  Timer _timer;
+  var _timerStr = '00:00';
+  var _timerSec = 0;
+  var _running = false;
+  var _isStarted = false;
+  var _leftButtonStr = '+Min';
+  var _rightButtonStr = 'Start';
 
-  void startTimer() {
-    resetTimer();
-    timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {
-        if (timerSec == 0) {
-          resetTimer();
-        } else if (running) {
-          updateTimerCount();
-          timerSec--;
-        }
-      });
+  void _prepareTimer() {
+    _isStarted = true;
+    _leftButtonStr = 'Reset';
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_timerSec == 0) {
+        _resetTimer();
+      } else if (_running) {
+        _updateTimerCount();
+        _timerSec--;
+      }
     });
   }
 
-  void resetTimer() {
-    timerSec = 180;
-    running = false;
-    if (timer != null) {
-      timer.cancel();
-      timer = null;
-    }
-    updateTimerCount();
+  void _startTimer() {
+    _running = true;
+    setState(() {
+      _rightButtonStr = 'Stop';
+    });
   }
 
-  void updateTimerCount() {
-    int min = timerSec ~/ 60;
-    int sec = (timerSec - min * 60) % 60;
-    timerStr = '${min.toString().padLeft(2, "0")}:${sec.toString().padLeft(2, "0")}';
+  void _stopTimer() {
+    _running = false;
+    setState(() {
+      _rightButtonStr = 'Start';
+    });
+  }
+
+  void _incrementMinutes() {
+    _timerSec += 60;
+    _updateTimerCount();
+  }
+
+  void _resetTimer() {
+    _stopTimer();
+    _timerSec = 0;
+    _isStarted = false;
+    if (_timer != null) {
+      _timer.cancel();
+      _timer = null;
+    }
+    _updateTimerCount();
+    _leftButtonStr = '+Min';
+  }
+
+  void _updateTimerCount() {
+    int min = _timerSec ~/ 60;
+    int sec = (_timerSec - min * 60) % 60;
+    setState(() {
+      _timerStr = '${min.toString().padLeft(2, "0")}:${sec.toString().padLeft(2, "0")}';
+    });
   }
 
   @override
@@ -71,7 +94,7 @@ class _RamenTimerPageStage extends State<RamenTimerPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              timerStr,
+              _timerStr,
               style: Theme.of(context).textTheme.display1,
             ),
             Row(
@@ -79,15 +102,28 @@ class _RamenTimerPageStage extends State<RamenTimerPage> {
               children: <Widget>[
                 RaisedButton(
                   onPressed: () {
-                    startTimer();
+                    if (_isStarted) {
+                      _resetTimer();
+                    } else {
+                      _incrementMinutes();
+                    }
                   },
-                  child: Text('Reset Timer'),
+                  child: Text(_leftButtonStr),
                 ),
                 RaisedButton(
                   onPressed: () {
-                    running = !running;
+                    if (!_isStarted) {
+                      _prepareTimer();
+                      _startTimer();
+                    } else {
+                      if (_running) {
+                        _stopTimer();
+                      } else {
+                        _startTimer();
+                      }
+                    }
                   },
-                  child: Text(running ? 'Pause' : 'Resume'),
+                  child: Text(_rightButtonStr),
                 )
               ],
             )
@@ -95,5 +131,11 @@ class _RamenTimerPageStage extends State<RamenTimerPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _resetTimer();
   }
 }
