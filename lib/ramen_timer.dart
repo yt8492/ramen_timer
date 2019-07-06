@@ -139,6 +139,7 @@ class _RamenTimerPageStage extends State<RamenTimerPage> {
     _timerSec = 0;
 //    _isStarted = false;
     _timerState = TimerState.Init;
+// _timer? ?? false
     if (_timer != null) {
       _timer.cancel();
       _timer = null;
